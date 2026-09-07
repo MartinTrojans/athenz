@@ -1,3 +1,27 @@
+Athenz v1.12.47 Release / Sep 04, 2026
+--------------------------------------
+
+#3407 Feat: Access Token with Multiple Domain Supported for Full Token Exchange
+#3459 Support dynamic solution template reload
+#3464 docs: fix typos in policy, redux and util docs
+#3465 MSD - policy snapshot usage recording and retrieval; snapshot force delete flag
+#3466 Add null attestation data validation to InstanceAWSProvider
+#3467 Add X509 service certificate email validation
+#3469 Feat: Certificate bound AccessToken Supported for `ID-JAG => AT` & `AT => AT`
+#3470 Fix `token-only` option bug for JAG token issue flow in zts-accesstoken CLI
+#3473 Add ID-JAG token based instance provider
+#3475 Make the GitHub OIDC token request timeout and retry configurable
+#3476 Support client-selected signing key type on the access token endpoint (key_type)
+#3479 Bump @xmldom/xmldom from 0.8.13 to 0.8.15 in /ui
+#3480 nodejs auth_core: parse token claims only from the signed prefix
+#3481 Remove debug log statement from AwsStateFileBuilder constructor
+#3482 Display job_workflow_ref based resource value in GitHub Actions SIA
+#3483 Include proxy principal spiffe uris in access tokens without mTLS binding
+#3484 mtls bind token spiffe uri function name rename
+#3485 Feat: `zts-accesstoken` with `-audience`
+#3486 MSD usage reporting - return the outcome when recording transport policy snapshot usage
+#3488 update java/go/js dependencies to their latest releases
+
 Athenz v1.12.46 Release / Aug 24, 2026
 --------------------------------------
 
