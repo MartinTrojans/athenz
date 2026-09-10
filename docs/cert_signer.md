@@ -122,11 +122,10 @@ using the following system properties:
 
 Class: com.yahoo.athenz.zts.cert.impl.crypki.JavaCrypkiCertSignerFactory
 
-In-process KMS/HSM signing. This is new functionality and is off by default.
+In-process KMS/HSM signing. Selecting this factory enables the feature.
 Existing `HttpCertSigner` deployments are not changed.
 
 ```
-athenz.zts.java_crypki_enabled=true
 athenz.zts.cert_signer_factory_class=com.yahoo.athenz.zts.cert.impl.crypki.JavaCrypkiCertSignerFactory
 athenz.zts.java_crypki_factory_class=io.athenz.server.aws.common.cert.impl.AwsKmsCrypkiSignerFactory
 ```

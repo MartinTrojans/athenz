@@ -30,38 +30,28 @@ public class JavaCrypkiCertSignerFactoryTest {
 
     @AfterMethod
     public void cleanup() {
-        System.clearProperty(ZTSConsts.ZTS_PROP_JAVA_CRYPKI_ENABLED);
         System.clearProperty(ZTSConsts.ZTS_PROP_JAVA_CRYPKI_FACTORY_CLASS);
     }
 
     @Test
-    public void testDisabledByDefault() {
+    public void testRequiresFactoryClass() {
         expectThrows(ResourceException.class, () -> new JavaCrypkiCertSignerFactory().create());
     }
 
     @Test
-    public void testEnabledRequiresFactoryClass() {
-        System.setProperty(ZTSConsts.ZTS_PROP_JAVA_CRYPKI_ENABLED, "true");
-        expectThrows(ResourceException.class, () -> new JavaCrypkiCertSignerFactory().create());
-    }
-
-    @Test
-    public void testEnabledCreatesBackendFactory() {
-        System.setProperty(ZTSConsts.ZTS_PROP_JAVA_CRYPKI_ENABLED, "true");
+    public void testCreatesBackendFactory() {
         System.setProperty(ZTSConsts.ZTS_PROP_JAVA_CRYPKI_FACTORY_CLASS, DummyCertSignerFactory.class.getName());
         assertNotNull(new JavaCrypkiCertSignerFactory().create());
     }
 
     @Test
     public void testInvalidFactoryClass() {
-        System.setProperty(ZTSConsts.ZTS_PROP_JAVA_CRYPKI_ENABLED, "true");
         System.setProperty(ZTSConsts.ZTS_PROP_JAVA_CRYPKI_FACTORY_CLASS, "invalid.Factory");
         expectThrows(ResourceException.class, () -> new JavaCrypkiCertSignerFactory().create());
     }
 
     @Test
     public void testBackendResourceExceptionIsRethrown() {
-        System.setProperty(ZTSConsts.ZTS_PROP_JAVA_CRYPKI_ENABLED, "true");
         System.setProperty(ZTSConsts.ZTS_PROP_JAVA_CRYPKI_FACTORY_CLASS, FailingCertSignerFactory.class.getName());
         expectThrows(ResourceException.class, () -> new JavaCrypkiCertSignerFactory().create());
     }

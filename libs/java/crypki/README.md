@@ -44,18 +44,16 @@ SIA / instance provider
 ## Deployments
 
 Existing ZTS `HttpCertSigner` / `HttpCertSignerFactory` code is unchanged.
-In-process Java Crypki is opt-in and off by default:
+In-process Java Crypki is opt-in by selecting its factory:
 
 ```
-athenz.zts.java_crypki_enabled=true
 athenz.zts.cert_signer_factory_class=com.yahoo.athenz.zts.cert.impl.crypki.JavaCrypkiCertSignerFactory
 athenz.zts.java_crypki_factory_class=io.athenz.server.aws.common.cert.impl.AwsKmsCrypkiSignerFactory
 ```
 
-Without `athenz.zts.java_crypki_enabled=true`, ZTS keeps using the original
-HTTP Crypki client.
+Without that factory class, ZTS keeps using the original HTTP Crypki client.
 
-Optional in-process backends (used only when the flag is true):
+Optional in-process backends:
 
 | Backend | Factory | Library |
 |---|---|---|
@@ -96,12 +94,12 @@ Go Crypki (`theparanoids/crypki`) is a **signing service**. This module is a
 | Key custody | PKCS#11 / HSM inside the Go process | Pluggable: remote Go Crypki, KMS, or HSM |
 | HTTP API | Owns `/sig/x509-cert/keys/...` | Optional client of that API (`HttpCrypkiSigner`) |
 | Cloud KMS | Not in-tree | AWS/GCP clients in the existing cloud common modules |
-| ZTS config | `HttpCertSignerFactory` + `athenz.zts.certsign_base_uri` | Unchanged unless `athenz.zts.java_crypki_enabled=true` |
+| ZTS config | `HttpCertSignerFactory` + `athenz.zts.certsign_base_uri` | Unchanged unless `cert_signer_factory_class` is `JavaCrypkiCertSignerFactory` |
 
 Compatibility kept on purpose:
 
 - Existing ZTS `HttpCertSigner` / `HttpCertSignerFactory` stay as they are.
-  In-process backends require `athenz.zts.java_crypki_enabled=true`.
+  In-process backends require `JavaCrypkiCertSignerFactory`.
 - Request shape (key meta, CSR, EKU ints, validity seconds, priority) matches
   the Go `/sig/x509-cert` contract.
 - Soft-fail HTTP behavior is unchanged: `sign()` may return `null` instead of

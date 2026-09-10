@@ -19,7 +19,6 @@ import com.google.cloud.kms.v1.KeyManagementServiceClient;
 import com.yahoo.athenz.common.server.cert.CertSigner;
 import com.yahoo.athenz.common.server.cert.CertSignerFactory;
 import com.yahoo.athenz.crypki.CrypkiCertSigner;
-import com.yahoo.athenz.crypki.CrypkiConsts;
 import com.yahoo.athenz.crypki.CrypkiException;
 import com.yahoo.athenz.crypki.CrypkiRequestFactory;
 import com.yahoo.athenz.crypki.CrypkiSigner;
@@ -51,7 +50,6 @@ public class GcpKmsCrypkiSignerFactory implements CertSignerFactory, CrypkiSigne
 
     @Override
     public CertSigner create() {
-        CrypkiConsts.requireJavaCrypkiEnabled();
         return new CrypkiCertSigner(createSigner(), CrypkiRequestFactory.forKms());
     }
 

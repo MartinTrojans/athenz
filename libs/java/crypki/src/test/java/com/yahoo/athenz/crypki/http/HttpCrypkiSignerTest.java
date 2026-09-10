@@ -309,6 +309,19 @@ public class HttpCrypkiSignerTest {
         signer.close();
     }
 
+    @Test
+    public void testPostX509CertificateSerializationFailure() {
+        HttpCrypkiSigner signer = new HttpCrypkiSigner();
+        X509CertificateSigningRequest bad = new X509CertificateSigningRequest() {
+            @Override
+            public String getCsr() {
+                throw new RuntimeException("cannot serialize");
+            }
+        };
+        assertNull(signer.postX509Certificate("aws", "kid", bad));
+        signer.close();
+    }
+
     private static CloseableHttpResponse mockResponse(int status, String body) throws Exception {
         CloseableHttpResponse response = Mockito.mock(CloseableHttpResponse.class);
         HttpEntity entity = Mockito.mock(HttpEntity.class);

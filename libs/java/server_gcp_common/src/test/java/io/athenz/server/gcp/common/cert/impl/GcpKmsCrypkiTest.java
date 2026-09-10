@@ -28,8 +28,6 @@ import com.yahoo.athenz.crypki.CrypkiException;
 import com.yahoo.athenz.crypki.kms.KmsClient;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.nio.file.Files;
@@ -41,22 +39,6 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
 public class GcpKmsCrypkiTest {
-
-    @BeforeMethod
-    public void enableJavaCrypki() {
-        System.setProperty(CrypkiConsts.PROP_JAVA_CRYPKI_ENABLED, "true");
-    }
-
-    @AfterMethod
-    public void clearJavaCrypki() {
-        System.clearProperty(CrypkiConsts.PROP_JAVA_CRYPKI_ENABLED);
-    }
-
-    @Test
-    public void testCreateRequiresJavaCrypkiEnabled() {
-        System.clearProperty(CrypkiConsts.PROP_JAVA_CRYPKI_ENABLED);
-        expectThrows(CrypkiException.class, () -> new GcpKmsCrypkiSignerFactory(Mockito.mock(KmsClient.class)).create());
-    }
 
     @Test
     public void testFactoryWithInjectedClient() {

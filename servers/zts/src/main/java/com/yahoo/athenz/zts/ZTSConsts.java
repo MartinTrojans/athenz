@@ -203,7 +203,6 @@ public final class ZTSConsts {
 
     public static final String ZTS_PROP_METRIC_FACTORY_CLASS             = "athenz.zts.metric_factory_class";
     public static final String ZTS_PROP_CERT_SIGNER_FACTORY_CLASS        = "athenz.zts.cert_signer_factory_class";
-    public static final String ZTS_PROP_JAVA_CRYPKI_ENABLED              = "athenz.zts.java_crypki_enabled";
     public static final String ZTS_PROP_JAVA_CRYPKI_FACTORY_CLASS        = "athenz.zts.java_crypki_factory_class";
     public static final String ZTS_PROP_SSH_SIGNER_FACTORY_CLASS         = "athenz.zts.ssh_signer_factory_class";
     public static final String ZTS_PROP_AUDIT_LOGGER_FACTORY_CLASS       = "athenz.zts.audit_logger_factory_class";

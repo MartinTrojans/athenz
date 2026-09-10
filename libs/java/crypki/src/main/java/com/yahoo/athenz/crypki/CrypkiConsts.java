@@ -55,14 +55,6 @@ public final class CrypkiConsts {
     public static final String PROP_HSM_CA_CERT_PATH     = "athenz.crypki.hsm.ca_cert_path";
     public static final String DEFAULT_HSM_KEY_LABEL     = "athenz-crypki-ca";
 
-    public static final String PROP_JAVA_CRYPKI_ENABLED = "athenz.zts.java_crypki_enabled";
-
-    public static void requireJavaCrypkiEnabled() {
-        if (!Boolean.parseBoolean(System.getProperty(PROP_JAVA_CRYPKI_ENABLED, "false"))) {
-            throw new CrypkiException("Java Crypki is disabled; set " + PROP_JAVA_CRYPKI_ENABLED + "=true");
-        }
-    }
-
     public static final String DEFAULT_KEY_ID = "x509-key";
     public static final String CERT_USAGE_CLIENT = "client";
     public static final String CERT_USAGE_CODE_SIGNING = "codeSigning";

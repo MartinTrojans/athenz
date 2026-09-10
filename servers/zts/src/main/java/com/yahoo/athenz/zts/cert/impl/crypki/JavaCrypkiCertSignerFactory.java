@@ -23,18 +23,13 @@ import org.eclipse.jetty.util.StringUtil;
 
 /**
  * Opt-in factory for the in-process Java Crypki backends. Existing
- * {@link HttpCertSignerFactory} deployments are unchanged unless
- * {@code athenz.zts.java_crypki_enabled=true} and this factory is
- * selected via {@code athenz.zts.cert_signer_factory_class}.
+ * {@link HttpCertSignerFactory} deployments are unchanged unless this
+ * factory is selected via {@code athenz.zts.cert_signer_factory_class}.
  */
 public class JavaCrypkiCertSignerFactory implements CertSignerFactory {
 
     @Override
     public CertSigner create() {
-        if (!Boolean.parseBoolean(System.getProperty(ZTSConsts.ZTS_PROP_JAVA_CRYPKI_ENABLED, "false"))) {
-            throw new ResourceException(ResourceException.INTERNAL_SERVER_ERROR,
-                    "Java Crypki is disabled; set " + ZTSConsts.ZTS_PROP_JAVA_CRYPKI_ENABLED + "=true");
-        }
         final String factoryClass = System.getProperty(ZTSConsts.ZTS_PROP_JAVA_CRYPKI_FACTORY_CLASS);
         if (StringUtil.isEmpty(factoryClass)) {
             throw new ResourceException(ResourceException.INTERNAL_SERVER_ERROR,

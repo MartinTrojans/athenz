@@ -26,17 +26,23 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequest;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
+import org.mockito.MockedConstruction;
+import org.mockito.Mockito;
 import org.testng.annotations.Test;
 
 import javax.security.auth.x500.X500Principal;
+import java.lang.reflect.Method;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.Provider;
+import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -168,6 +174,74 @@ public class X509CertificateMinterTest {
         }
     }
 
+    @Test
+    public void testMalformedCsrThrowsParseError() throws Exception {
+        X509CertificateMinter minter = new X509CertificateMinter(60);
+        String malformedPem = "-----BEGIN CERTIFICATE REQUEST-----\n****\n-----END CERTIFICATE REQUEST-----\n";
+        CrypkiException ex = expectThrows(CrypkiException.class, () -> minter.sign(rsaCa(),
+                X509SignRequest.builder().csrPem(malformedPem).build()));
+        assertEquals(ex.getMessage(), "Unable to parse CSR");
+        assertNotNull(ex.getCause());
+    }
+
+    @Test
+    public void testSignWrapsUnexpectedErrors() throws Exception {
+        SigningKey ca = rsaCa();
+        String csr = Crypto.generateX509CSR(Crypto.generateRSAPrivateKey(2048),
+                "CN=wrap.errors,O=Athenz,C=US", null);
+        ContentSigner signer = X509CertificateMinter.contentSigner(ca.getPrivateKey());
+        X509Certificate badCa = Mockito.mock(X509Certificate.class);
+        Mockito.when(badCa.getEncoded()).thenThrow(new java.security.cert.CertificateEncodingException("bad ca"));
+        CrypkiException ex = expectThrows(CrypkiException.class, () ->
+                new X509CertificateMinter(60).signCertificate(signer, badCa,
+                        X509SignRequest.builder().csrPem(csr).build()));
+        assertTrue(ex.getMessage().startsWith("Unable to sign X.509 certificate"));
+    }
+
+    @Test
+    public void testVerifyCsrSignatureWrapsProviderErrors() throws Exception {
+        JcaPKCS10CertificationRequest parsed = new JcaPKCS10CertificationRequest(
+                Crypto.getPKCS10CertRequest(Crypto.generateX509CSR(
+                        Crypto.generateRSAPrivateKey(2048), "CN=verify-wrap,O=Athenz,C=US", null)));
+        CrypkiException ex = expectThrows(CrypkiException.class,
+                () -> X509CertificateMinter.verifyCsrSignature(parsed, dummyPublicKey()));
+        assertEquals(ex.getMessage(), "Unable to verify CSR signature");
+    }
+
+    @Test
+    public void testPkcs11ProviderFallbackSucceeds() {
+        Provider pkcs11 = new Provider("SunPKCS11-Coverage", "1.0", "test") {
+        };
+        Security.addProvider(pkcs11);
+        ContentSigner fallback = Mockito.mock(ContentSigner.class);
+        try (MockedConstruction<JcaContentSignerBuilder> mocked = Mockito.mockConstruction(
+                JcaContentSignerBuilder.class,
+                (mock, context) -> {
+                    Mockito.when(mock.setProvider(Mockito.any(Provider.class))).thenReturn(mock);
+                    if (context.getCount() == 1) {
+                        Mockito.when(mock.build(Mockito.any())).thenThrow(new RuntimeException("no default signer"));
+                    } else {
+                        Mockito.when(mock.build(Mockito.any())).thenReturn(fallback);
+                    }
+                })) {
+            assertEquals(X509CertificateMinter.contentSigner(dummyPrivateKey("RSA")), fallback);
+        } finally {
+            Security.removeProvider("SunPKCS11-Coverage");
+        }
+    }
+
+    @Test
+    public void testAddSanReturnsWhenAttributesMissing() throws Exception {
+        JcaPKCS10CertificationRequest jcaReq = Mockito.mock(JcaPKCS10CertificationRequest.class);
+        Mockito.when(jcaReq.getAttributes(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest)).thenReturn(null);
+        Method method = X509CertificateMinter.class.getDeclaredMethod("addSubjectAlternativeNames",
+                X509v3CertificateBuilder.class, JcaPKCS10CertificationRequest.class);
+        method.setAccessible(true);
+        X509v3CertificateBuilder builder = Mockito.mock(X509v3CertificateBuilder.class);
+        method.invoke(null, builder, jcaReq);
+        Mockito.verifyNoInteractions(builder);
+    }
+
     private static SigningKey rsaCa() throws Exception {
         PrivateKey caKey = Crypto.generateRSAPrivateKey(2048);
         String csrPem = Crypto.generateX509CSR(caKey, "CN=Athenz Test CA,O=Athenz,C=US", null);
@@ -206,6 +280,25 @@ public class X509CertificateMinterTest {
             @Override
             public byte[] getEncoded() {
                 return new byte[0];
+            }
+        };
+    }
+
+    private static PublicKey dummyPublicKey() {
+        return new PublicKey() {
+            @Override
+            public String getAlgorithm() {
+                return "RSA";
+            }
+
+            @Override
+            public String getFormat() {
+                return "X.509";
+            }
+
+            @Override
+            public byte[] getEncoded() {
+                return new byte[]{0x00};
             }
         };
     }

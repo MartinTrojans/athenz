@@ -28,7 +28,6 @@ import com.yahoo.athenz.crypki.signer.SigningKey;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.kms.model.GetPublicKeyRequest;
@@ -53,14 +52,8 @@ import static org.testng.Assert.expectThrows;
 
 public class AwsCrypkiSignerFactoryTest {
 
-    @BeforeMethod
-    public void enableJavaCrypki() {
-        System.setProperty(CrypkiConsts.PROP_JAVA_CRYPKI_ENABLED, "true");
-    }
-
     @AfterMethod
     public void resetCloudHsmStubs() {
-        System.clearProperty(CrypkiConsts.PROP_JAVA_CRYPKI_ENABLED);
         StubKeyStoreSpi.key = null;
         CloudHsmProvider.failLogin = false;
         KeyStoreWithAttributes.throwOnGetInstance = false;
@@ -68,13 +61,6 @@ public class AwsCrypkiSignerFactoryTest {
         KeyStoreWithAttributes.returnNullKey = false;
         Security.removeProvider("CloudHsmProvider");
         Security.removeProvider("AthenzCrypkiHsm");
-    }
-
-    @Test
-    public void testCreateRequiresJavaCrypkiEnabled() {
-        System.clearProperty(CrypkiConsts.PROP_JAVA_CRYPKI_ENABLED);
-        expectThrows(CrypkiException.class, () -> new AwsKmsCrypkiSignerFactory(Mockito.mock(KmsClient.class)).create());
-        expectThrows(CrypkiException.class, () -> new AwsCloudHsmCrypkiSignerFactory(Mockito.mock(HsmClient.class)).create());
     }
 
     @Test

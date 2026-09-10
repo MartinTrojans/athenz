@@ -21,7 +21,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
 
 public class CrypkiConstsTest {
 
@@ -31,17 +30,5 @@ public class CrypkiConstsTest {
         assertTrue(Modifier.isPrivate(constructor.getModifiers()));
         constructor.setAccessible(true);
         constructor.newInstance();
-    }
-
-    @Test
-    public void testRequireJavaCrypkiEnabled() {
-        System.clearProperty(CrypkiConsts.PROP_JAVA_CRYPKI_ENABLED);
-        expectThrows(CrypkiException.class, CrypkiConsts::requireJavaCrypkiEnabled);
-        System.setProperty(CrypkiConsts.PROP_JAVA_CRYPKI_ENABLED, "true");
-        try {
-            CrypkiConsts.requireJavaCrypkiEnabled();
-        } finally {
-            System.clearProperty(CrypkiConsts.PROP_JAVA_CRYPKI_ENABLED);
-        }
     }
 }
