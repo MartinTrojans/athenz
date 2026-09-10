@@ -6,6 +6,7 @@
 * [Provided Implementations](#provided-implementations)
     * [Self Cert Signer](#self-cert-signer)
     * [HTTP Cert Signer](#http-cert-signer)
+    * [Java Crypki (opt-in)](#java-crypki-opt-in)
 
 
 Athenz supports service authentication with X.509 certificates. 
@@ -115,3 +116,22 @@ using the following system properties:
   This setting specifies the number of times the request
   should be retried if it's not completed with the requested
   timeout value. We are setting it to 3.
+
+### Java Crypki (opt-in)
+------------------------
+
+Class: com.yahoo.athenz.zts.cert.impl.crypki.JavaCrypkiCertSignerFactory
+
+In-process KMS/HSM signing. Selecting this factory enables the feature.
+Existing `HttpCertSigner` deployments are not changed.
+
+```
+athenz.zts.cert_signer_factory_class=com.yahoo.athenz.zts.cert.impl.crypki.JavaCrypkiCertSignerFactory
+athenz.zts.java_crypki_factory_class=io.athenz.server.aws.common.cert.impl.AwsKmsCrypkiSignerFactory
+```
+
+Backend factory classes:
+
+* `io.athenz.server.aws.common.cert.impl.AwsKmsCrypkiSignerFactory`
+* `io.athenz.server.aws.common.cert.impl.AwsCloudHsmCrypkiSignerFactory`
+* `io.athenz.server.gcp.common.cert.impl.GcpKmsCrypkiSignerFactory`
