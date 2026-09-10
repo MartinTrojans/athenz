@@ -75,7 +75,7 @@ func usage() {
 	fmt.Println("")
 	fmt.Println("      <service-details> := -domain <domain-name> -service <service-name>")
 	fmt.Println("")
-	fmt.Println("      <certificate-details> := -dns-domain <san-dns-domain-component> [-signer-cert-file <ca-cert-output-file>] [-spiffe] [-expiry-time <mins>] [-sub-c <subject country>] [-sub-o <subject org>] [-sub-ou <subject orgunit>] [-ip <san-ip-address>] [-signer-key-id <key-id>]")
+	fmt.Println("      <certificate-details> := -dns-domain <san-dns-domain-component> [-signer-cert-file <ca-cert-output-file>] [-spiffe] [-expiry-time <mins>] [-subj-c <subject country>] [-subj-o <subject org>] [-subj-ou <subject orgunit>] [-ip <san-ip-address>] [-hostname <hostname>] [-signer-key-id <key-id>]")
 	fmt.Println("")
 	fmt.Println("      <principal-credentials> := -svc-key-file <private-key-file> -svc-cert-file <service-cert-file> [-cacert <ca-cert-file>] |")
 	fmt.Println("                                 -ntoken-file <ntoken-file> [-hdr <auth-header-name>] [-cacert <ca-cert-file>]")
@@ -86,7 +86,7 @@ func usage() {
 func main() {
 	var ztsURL, serviceKey, serviceCert, domain, service, keyID, signerKeyID string
 	var caCertFile, certFile, signerCertFile, dnsDomain, hdr, ip string
-	var subjC, subjO, subjOU, uri, provider, instance, instanceId string
+	var subjC, subjO, subjOU, uri, provider, instance, instanceId, hostname, hostnameUri string
 	var svcKeyFile, svcCertFile, ntokenFile, attestationDataFile, spiffeTrustDomain string
 	var csr, spiffe, showVersion, getInstanceRegisterToken, useInstanceRegisterToken bool
 	var expiryTime int
@@ -111,6 +111,7 @@ func main() {
 	flag.StringVar(&subjO, "subj-o", "Oath Inc.", "Subject O/Organization field")
 	flag.StringVar(&subjOU, "subj-ou", "Athenz", "Subject OU/OrganizationalUnit field")
 	flag.StringVar(&ip, "ip", "", "IP address")
+	flag.StringVar(&hostname, "hostname", "", "instance hostname (e.g. server.athenz.io)")
 	flag.StringVar(&provider, "provider", "", "Athenz Provider")
 	flag.StringVar(&instance, "instance", "", "Instance Id")
 	flag.StringVar(&attestationDataFile, "attestation-data", "", "Attestation Data File")
@@ -197,6 +198,13 @@ func main() {
 		}
 		instanceId = fmt.Sprintf("athenz://instanceid/%s/%s", uriProvider, instance)
 	}
+	if hostname != "" {
+		if provider == "" && !csr {
+			log.Println("Error: -hostname requires -provider for certificate requests (use -csr to only generate the CSR)")
+			usage()
+		}
+		hostnameUri = fmt.Sprintf("athenz://hostname/%s", hostname)
+	}
 	if spiffe || spiffeTrustDomain != "" {
 		if spiffeTrustDomain != "" {
 			uri = fmt.Sprintf("spiffe://%s/ns/default/sa/%s", spiffeTrustDomain, commonName)
@@ -212,7 +220,7 @@ func main() {
 		Country:            []string{subjC},
 	}
 
-	csrData, err := generateCSR(pkSigner, subj, host, instanceId, ip, uri)
+	csrData, err := generateCSR(pkSigner, subj, host, instanceId, hostnameUri, ip, uri)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -295,6 +303,9 @@ func main() {
 		}
 		if signerKeyID != "" {
 			req.X509CertSignerKeyId = zts.SimpleName(signerKeyID)
+		}
+		if hostname != "" {
+			req.Hostname = zts.DomainName(hostname)
 		}
 
 		// request a tls certificate for this service
@@ -400,7 +411,7 @@ func newSigner(privateKeyPEM []byte) (*signer, error) {
 	return &signer{key: key, algorithm: algorithm}, nil
 }
 
-func generateCSR(keySigner *signer, subj pkix.Name, host, instanceId, ip, uri string) (string, error) {
+func generateCSR(keySigner *signer, subj pkix.Name, host, instanceId, hostnameUri, ip, uri string) (string, error) {
 
 	template := x509.CertificateRequest{
 		Subject:            subj,
@@ -409,21 +420,15 @@ func generateCSR(keySigner *signer, subj pkix.Name, host, instanceId, ip, uri st
 	if host != "" {
 		template.DNSNames = []string{host}
 	}
-	if uri != "" {
-		uriptr, err := url.Parse(uri)
-		if err == nil {
-			template.URIs = []*url.URL{uriptr}
+	for _, sanUri := range []string{uri, instanceId, hostnameUri} {
+		if sanUri == "" {
+			continue
 		}
-	}
-	if instanceId != "" {
-		uriptr, err := url.Parse(instanceId)
-		if err == nil {
-			if len(template.URIs) > 0 {
-				template.URIs = append(template.URIs, uriptr)
-			} else {
-				template.URIs = []*url.URL{uriptr}
-			}
+		uriptr, err := url.Parse(sanUri)
+		if err != nil {
+			return "", fmt.Errorf("cannot parse SAN URI %q: %v", sanUri, err)
 		}
+		template.URIs = append(template.URIs, uriptr)
 	}
 	if ip != "" {
 		template.IPAddresses = []net.IP{net.ParseIP(ip)}
